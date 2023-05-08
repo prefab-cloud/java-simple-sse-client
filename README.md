@@ -3,14 +3,15 @@
 This provides a bare-bones wrapper class (`SSEHandler`) that acts as a java (11+) Http Client LineSubscriber, converting incoming SSE data to an Event stream.
 
 It Supports
-* Comment events
-* Data events, including the last known event id
+* SSE Comment events
+* SSE Data events, including the last known event id
+* Propagation of normal or exceptional closure of the streaming connection
 
 It currently omits the following
 
-* Retry events from SSE Spec
-* Connection management/retries
-* StreamHandler states 
+* Retry events from SSE Spec - these only provide a suggested retry time
+* StreamHandler states - specify the state of the streaming connection, we didn't find them needed in our use
+* Connection management/retries (we don't wrap the client so this is readily accessible
 
 
 ## Background
@@ -79,5 +80,7 @@ CompletableFuture<HttpResponse<Void>> future = httpClient.sendAsync(
         );
 ```
 
+
+Another example can be seen in the Prefab Java Client's [SseConfigStreamingSubscriber](https://github.com/prefab-cloud/prefab-cloud-java/blob/main/client/src/main/java/cloud/prefab/client/internal/SseConfigStreamingSubscriber.java) where another listener wraps SSE handle to further process the dataevents by Base64 decoding and Protobuf parsing before notifying the Prefab Client that new configurations have arrived
 
 
