@@ -57,7 +57,11 @@ public class SSEHandler
         currentEventName,
         lastEventId
       );
-      submit(new DataEvent(currentEventName, dataBuffer.toString(), lastEventId));
+
+      String dataString = dataBuffer.toString();
+      if (!dataString.isEmpty()) {
+        submit(new DataEvent(currentEventName, dataBuffer.toString(), lastEventId));
+      }
       //reset things
       dataBuffer.setLength(0);
       currentEventName = DEFAULT_EVENT_NAME;
