@@ -136,6 +136,21 @@ class SSEHandlerTest {
       );
   }
 
+  @Test
+  void itDoesNotSendDataEventWithoutDataBufferContents() throws InterruptedException {
+    submissionPublisher.submit("\n");
+    submissionPublisher.close();
+    await()
+      .atMost(3, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        assertThat(endSubscriber.isComplete.get())
+          .isTrue();
+        assertThat(endSubscriber.events).isEmpty();
+        }
+
+      );
+  }
+
   private static class EndSubscriber implements Flow.Subscriber<Event> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EndSubscriber.class);
