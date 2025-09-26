@@ -1,0 +1,93 @@
+name: Publish to Maven Central
+
+on:
+  workflow_run:
+    workflows: ["Java CI with Maven"]
+    types:
+      - completed
+    branches: [ "main" ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.repository == 'prefab-cloud/java-simple-sse-client' && github.event.workflow_run.conclusion == 'success'
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Extract version from pom.xml
+      id: extract_version
+      run: |
+        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $VERSION"
+
+    - name: Check if version exists in Maven Central
+      id: version_check
+      run: |
+        VERSION=${{ steps.extract_version.outputs.version }}
+        echo "Checking if version $VERSION exists in Maven Central..."
+
+        # Check if version exists (non-snapshot versions only)
+        if [[ "$VERSION" != *-SNAPSHOT ]]; then
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://repo1.maven.org/maven2/cloud/prefab/sse-handler/$VERSION/sse-handler-$VERSION.pom")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Version $VERSION already exists in Maven Central"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version $VERSION does not exist in Maven Central"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "Snapshot version detected, skipping publication"
+          echo "should_publish=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Import GPG key
+      if: steps.version_check.outputs.should_publish == 'true'
+      uses: crazy-max/ghaction-import-gpg@v6
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+    - name: Configure Maven settings
+      if: steps.version_check.outputs.should_publish == 'true'
+      uses: s4u/maven-settings-action@v3.0.0
+      with:
+        servers: |
+          [
+            {
+              "id": "central",
+              "username": "${{ secrets.MAVEN_CENTRAL_USERNAME }}",
+              "password": "${{ secrets.MAVEN_CENTRAL_TOKEN }}"
+            }
+          ]
+
+    - name: Publish to Maven Central
+      if: steps.version_check.outputs.should_publish == 'true'
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        echo "Publishing version ${{ steps.extract_version.outputs.version }} to Maven Central..."
+        mvn clean deploy -P release --no-transfer-progress -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+
+    - name: Create GitHub Release
+      if: steps.version_check.outputs.should_publish == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.extract_version.outputs.version }}
+        name: Release v${{ steps.extract_version.outputs.version }}
+        generate_release_notes: true
+        prerelease: ${{ contains(steps.extract_version.outputs.version, 'RC') || contains(steps.extract_version.outputs.version, 'beta') || contains(steps.extract_version.outputs.version, 'alpha') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
