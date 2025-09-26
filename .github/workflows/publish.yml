@@ -28,7 +28,7 @@ jobs:
     - name: Extract version from pom.xml
       id: extract_version
       run: |
-        VERSION=$(grep -A1 '<artifactId>sse-handler</artifactId>' pom.xml | grep '<version>' | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+        VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Current version: $VERSION"
 
