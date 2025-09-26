@@ -151,6 +151,24 @@ class SSEHandlerTest {
       );
   }
 
+  @Test
+  void itHandlesCommentsWhenEventIdIsPresent() throws InterruptedException {
+    submissionPublisher.submit("id: 12345\n");
+    submissionPublisher.submit(": this is a comment\n");
+    submissionPublisher.submit("data: hello\n");
+    submissionPublisher.submit("\n");
+    await()
+      .atMost(3, TimeUnit.SECONDS)
+      .untilAsserted(() ->
+        assertThat(endSubscriber.events)
+          .hasSize(2)
+          .containsExactly(
+            new CommentEvent("this is a comment"),
+            new DataEvent("message", "hello\n", "12345")
+          )
+      );
+  }
+
   private static class EndSubscriber implements Flow.Subscriber<Event> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EndSubscriber.class);
