@@ -13,9 +13,13 @@
   <version>1.0.1</version>
   <packaging>jar</packaging>
 
+  <name>Prefab SSE Handler</name>
+  <description>A simple Server-Sent Events (SSE) client handler for Java applications</description>
+
   <properties>
     <basepom.check.skip-license>true</basepom.check.skip-license>
     <basepom.check.skip-spotbugs>true</basepom.check.skip-spotbugs>
+    <basepom.nexus-staging.skip>true</basepom.nexus-staging.skip>
     <dep.assertj.version>3.23.1</dep.assertj.version>
     <dep.awaitability.version>4.2.0</dep.awaitability.version>
     <dep.junit.version>5.9.1</dep.junit.version>
@@ -115,13 +119,20 @@
           </executions>
         </plugin>
         <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <autoPublish>true</autoPublish>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>1.6.13</version>
           <configuration>
-            <serverId>sonatype-nexus-staging</serverId>
-            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-            <autoReleaseAfterClose>false</autoReleaseAfterClose>
+            <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
           </configuration>
         </plugin>
         <plugin>
@@ -160,8 +171,8 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
         <extensions>true</extensions>
       </plugin>
     </plugins>
@@ -191,14 +202,4 @@
     <developerConnection>scm:git:git@github.com:prefab-cloud/java-simple-sse-client.git</developerConnection>
     <url>https://github.com/prefab-cloud/java-simple-sse-client</url>
   </scm>
-  <distributionManagement>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 </project>
