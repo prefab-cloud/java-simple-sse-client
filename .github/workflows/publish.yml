@@ -28,7 +28,7 @@ jobs:
     - name: Extract version from pom.xml
       id: extract_version
       run: |
-        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        VERSION=$(mvn help:evaluate -Dexpression=project.version --no-transfer-progress 2>/dev/null | grep -E '^[0-9]' | head -1)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Current version: $VERSION"
 
